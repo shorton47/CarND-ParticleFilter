@@ -37,7 +37,7 @@ bool PDEBUG = true;
 
 
 // Section #1
-void ParticleFilter::init(double x, double y, double theta, double std[]) {
+void ParticleFilter::init(double gps_x, double gps_y, double init_heading, double gps_std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
@@ -51,36 +51,35 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
      * @param std[] Array of dimension 3 [standard deviation of x [m], std of y [m], std of yaw [rad]]
      */
 
-    Particle one_particle;      // single particle object
+    Particle a_particle;      // single particle object
     default_random_engine gen;  // rv sequence object
     
     
     // Set # of particles
-    num_particles = 15;
-    if (PDEBUG) cout << "Number of particles generated =" << num_particles << endl;
+    num_particles = 2;
+    if (PDEBUG) cout << "Number of particles being generated=" << num_particles << endl;
     
     // Normal (Gaussian) distributions with means position and yaw w/ st deviations's of std[].
-    normal_distribution <double> dist_x    (x,     std[0]);
-    normal_distribution <double> dist_y    (y,     std[1]);
-    normal_distribution <double> dist_theta(theta, std[2]);
+    normal_distribution <double> dist_x    (gps_x,        gps_std[0]);
+    normal_distribution <double> dist_y    (gps_y,        gps_std[1]);
+    normal_distribution <double> dist_theta(init_heading, gps_std[2]);
     
     // Generate particles w/ position with additive gaussian noise. "gen" is the random engine initialized earlier
     for (int i = 0; i < num_particles; ++i) {
         
-        one_particle.id     = i+1;
-        one_particle.x      = dist_x(gen);
-        one_particle.y      = dist_y(gen);
-        one_particle.theta  = dist_theta(gen);
-        one_particle.weight = 1.0F;
+        a_particle.id     = i+1;
+        a_particle.x      = dist_x(gen);
+        a_particle.y      = dist_y(gen);
+        a_particle.theta  = dist_theta(gen);
+        a_particle.weight = 1.0F;
         
-        // Add this particle to array of particles.
-        particles.push_back(one_particle);
-        weights.push_back(1.0F);  // <TODO> What is diff between one_particle.weight and weights?????
+        particles.push_back(a_particle);  // Add this particle to array of particles.
+        weights.push_back(1.0F);          // List of NORMALIZED particle weights <TODO> Figure this out
         
-        // Print particle
-        if (PDEBUG) cout << "Particle: " << one_particle.id << " " << one_particle.x     << " "
-                                         << one_particle.y  << " " << one_particle.theta << " " <<  endl;
-        }
+        // Debug
+        if (PDEBUG) cout << "Particle: " << a_particle.id << " " << a_particle.x     << " "
+                                         << a_particle.y  << " " << a_particle.theta << " " <<  endl;
+    }
     
     is_initialized = true;
     
@@ -99,12 +98,13 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     double noise_x, noise_y, noise_theta;
     double v_div_yawrate;
     
-    
-    // Normal (Gaussian) distributions with zero means w/ st deviations's of std_pos[].
+ 
+    // Create gaussian distributions generators with zero means w/ st deviations's of std_pos[].
     normal_distribution <double> dist_x    (0, std_pos[0]);
     normal_distribution <double> dist_y    (0, std_pos[1]);
     normal_distribution <double> dist_theta(0, std_pos[2]);
-
+    
+    // Set process flag
     if (abs(yaw_rate) > __DBL_EPSILON__) {
         yaw_rate_not_zero = true;
     } else {
@@ -131,21 +131,26 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
             new_y = old_y + (v_div_yawrate * (cos(old_theta)-cos(new_theta)));
             
         } else {
+            
+            // <TODO> Need to figure out these equations
+            new_theta = old_theta;
+            new_x = old_x + (velocity*delta_t)*cos(new_theta);
+            new_y = old_y + (velocity*delta_t)*sin(new_theta);
+            
+        } // if
         
-            
-            
-            
-        } // if yaw_rate
-        
-        // Add noise:
+        // Add noise
         noise_x     = dist_x(gen);
         noise_y     = dist_y(gen);
         noise_theta = dist_theta(gen);
         
-        // Update predicition plus noise
+        // Update prediction plus noise
         particles[i].x      = new_x + dist_x(gen);
         particles[i].y      = new_y +  dist_y(gen);
         particles[i].theta  = new_theta + dist_theta(gen);
+        
+        if (PDEBUG) cout << "P Update #" << particles[i].id << " " << particles[i].x << " "
+                                        <<  particles[i].y  << " " << particles[i].theta << endl;
 
     } // for num_particles
     

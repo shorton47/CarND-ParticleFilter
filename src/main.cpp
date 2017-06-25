@@ -40,10 +40,10 @@ int main() {
     double sigma_pos [3] = {0.3, 0.3, 0.01}; // GPS measurement uncertainty [x [m], y [m], theta [rad]]
     double sigma_landmark [2] = {0.3, 0.3}; // Landmark measurement uncertainty [x [m], y [m]]
 
-    cout << "Filter main: Sensor range (m) =" << sensor_range << endl;
-    cout << "Filter main: Delta time step (s) =" << delta_t << endl;
-    cout << "Filter main: GPS sigma: x,y,theta (m & rad) =" << sigma_pos[0] << " " << sigma_pos[1] << " " << sigma_pos[2] << endl;
-    cout << "Filter main: Landmark sigma: x,y (m)        =" << sigma_landmark[0] << " " << sigma_landmark[1] << endl;
+    cout << "Filter main: Sensor range (m)=" << sensor_range << endl;
+    cout << "Filter main: Delta time step (s)=" << delta_t << endl;
+    cout << "Filter main: GPS sigma: x,y,theta (m & rad)=" << sigma_pos[0] << " " << sigma_pos[1] << " " << sigma_pos[2] << endl;
+    cout << "Filter main: Landmark sigma: x,y (m)       =" << sigma_landmark[0] << " " << sigma_landmark[1] << endl;
 
     // Read map data
     Map map;
@@ -165,12 +165,6 @@ int main() {
   });
 
     
-    
-    
-    
-    
-    
-    
   // We don't need this since we're not using HTTP but if it's removed the program
   // doesn't compile :-(
   h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t, size_t) {
@@ -187,7 +181,7 @@ int main() {
   });
 
   h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
-    std::cout << "Particle Filter Engine Connected & Ready!!!" << std::endl;
+    std::cout << "Filter main: Particle filter engine connected & ready to start..." << std::endl;
   });
 
   h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
