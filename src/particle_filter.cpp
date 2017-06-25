@@ -22,9 +22,6 @@ using namespace std;
 // Class global for debug
 bool PDEBUG = true;
 
-
-
-
 //---------------
 // For each iteration of the master Particle Filter engine (from main.cpp), there are up to 4 main methods called:
 //
@@ -59,8 +56,8 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     
     
     // Set # of particles
-    num_particles = 5;
-    if (PDEBUG) cout << "Number of particles to be used=" << num_particles << endl;
+    num_particles = 15;
+    if (PDEBUG) cout << "Number of particles generated =" << num_particles << endl;
     
     // Normal (Gaussian) distributions with means position and yaw w/ st deviations's of std[].
     normal_distribution <double> dist_x    (x,     std[0]);
@@ -94,19 +91,65 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
 	// TODO: Add measurements to each particle and add random Gaussian noise.
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
-	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
-	//  http://www.cplusplus.com/reference/random/default_random_engine/
-
-
-// 3 parts to predicition
+	
+    Particle one_particle;      // single particle object
+    default_random_engine gen;  // rv sequence object
+    bool yaw_rate_not_zero;
+    double old_x, new_x, old_y, new_y, old_theta, new_theta;
+    double noise_x, noise_y, noise_theta;
+    double v_div_yawrate;
     
+    
+    // Normal (Gaussian) distributions with zero means w/ st deviations's of std_pos[].
+    normal_distribution <double> dist_x    (0, std_pos[0]);
+    normal_distribution <double> dist_y    (0, std_pos[1]);
+    normal_distribution <double> dist_theta(0, std_pos[2]);
+
+    if (abs(yaw_rate) > __DBL_EPSILON__) {
+        yaw_rate_not_zero = true;
+    } else {
+        yaw_rate_not_zero = false;
+        if (PDEBUG) cout << "Yaw rate ZERO!" << endl;
+    }
+    
+    // 3 parts to predicition
     //P-1 Sample
     //P-2 Calculate weight
     //P-3 Update state vector
+    for (int i=0; i<num_particles; i++) {
+    
+        old_x     = particles[i].x;
+        old_y     = particles[i].y;
+        old_theta = particles[i].theta;
+        
+        if (yaw_rate_not_zero) {
+        
+            v_div_yawrate = velocity/yaw_rate;
+            
+            new_theta = old_theta + yaw_rate*delta_t;
+            new_x = old_x + (v_div_yawrate * (sin(new_theta)-sin(old_theta)));
+            new_y = old_y + (v_div_yawrate * (cos(old_theta)-cos(new_theta)));
+            
+        } else {
+        
+            
+            
+            
+        } // if yaw_rate
+        
+        // Add noise:
+        noise_x     = dist_x(gen);
+        noise_y     = dist_y(gen);
+        noise_theta = dist_theta(gen);
+        
+        // Update predicition plus noise
+        particles[i].x      = new_x + dist_x(gen);
+        particles[i].y      = new_y +  dist_y(gen);
+        particles[i].theta  = new_theta + dist_theta(gen);
 
-
-
-}
+    } // for num_particles
+    
+} // predicition method
 
 
 // Section #3
