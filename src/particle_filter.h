@@ -11,6 +11,10 @@
 
 #include "helper_functions.h"
 
+// Class debug flag
+extern bool PDEBUG;
+
+
 struct Particle {
 
 	int id;
