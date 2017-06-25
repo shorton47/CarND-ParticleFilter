@@ -2,6 +2,8 @@
 #include <iostream>
 #include "json.hpp"
 #include <math.h>
+#include <ctime>
+
 #include "particle_filter.h"
 
 using namespace std;
@@ -25,33 +27,37 @@ std::string hasData(std::string s) {
   return "";
 }
 
-int main()
-{
-  uWS::Hub h;
+int main() {
+    
+    uWS::Hub h;
 
     //---------
     //Set up parameters here
     //---------
-    
-    //DEBUG_ = true;
-    
     double delta_t = 0.1; // Time elapsed between measurements [sec]
     double sensor_range = 50; // Sensor range [m]
 
     double sigma_pos [3] = {0.3, 0.3, 0.01}; // GPS measurement uncertainty [x [m], y [m], theta [rad]]
     double sigma_landmark [2] = {0.3, 0.3}; // Landmark measurement uncertainty [x [m], y [m]]
 
-  // Read map data
-  Map map;
-  if (!read_map_data("../data/map_data.txt", map)) {
-	  cout << "Error: Could not open map file" << endl;
-	  return -1;
-  }
+    cout << "Filter main: Sensor range (m) =" << sensor_range << endl;
+    cout << "Filter main: Delta time step (s) =" << delta_t << endl;
+    cout << "Filter main: GPS sigma: x,y,theta (m & rad) =" << sigma_pos[0] << " " << sigma_pos[1] << " " << sigma_pos[2] << endl;
+    cout << "Filter main: Landmark sigma: x,y (m)        =" << sigma_landmark[0] << " " << sigma_landmark[1] << endl;
 
-  // Create particle filter
-  ParticleFilter pf;
+    // Read map data
+    Map map;
+    if (!read_map_data("../data/map_data.txt", map)) {
+        cout << "Error: Could not open map file" << endl;
+        return -1;
+    }
 
-  h.onMessage([&pf,&map,&delta_t,&sensor_range,&sigma_pos,&sigma_landmark](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+    // Create particle filter
+    ParticleFilter pf;
+    
+    int start = clock();
+
+    h.onMessage([&pf,&map,&delta_t,&sensor_range,&sigma_pos,&sigma_landmark](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -155,9 +161,16 @@ int main()
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
       }
     }
-
+        
   });
 
+    
+    
+    
+    
+    
+    
+    
   // We don't need this since we're not using HTTP but if it's removed the program
   // doesn't compile :-(
   h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t, size_t) {
@@ -193,27 +206,12 @@ int main()
     return -1;
   }
   h.run();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    
+    int stop = clock();
+    cout << "Full time to run particle filter (s) =" << (stop-start) / double(CLOCKS_PER_SEC) << endl;
+    
+}  // Main
 
 
 

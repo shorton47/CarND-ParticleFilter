@@ -60,7 +60,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     
     // Set # of particles
     num_particles = 5;
-    if (PDEBUG) cout << "Number of particle to be used=" << num_particles << endl;
+    if (PDEBUG) cout << "Number of particles to be used=" << num_particles << endl;
     
     // Normal (Gaussian) distributions with means position and yaw w/ st deviations's of std[].
     normal_distribution <double> dist_x    (x,     std[0]);
