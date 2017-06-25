@@ -34,6 +34,11 @@ bool PDEBUG = true;
 //
 //---------------
 
+// 3 parts to predicition
+//P-1 Sample
+//P-2 Calculate weight
+//P-3 Update state vector
+
 
 
 // Section #1
@@ -87,9 +92,8 @@ void ParticleFilter::init(double gps_x, double gps_y, double init_heading, doubl
 
 
 // Section #2
+// Prediction step by adding measurements to each particle and add random Gaussian noise.
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
-	// TODO: Add measurements to each particle and add random Gaussian noise.
-	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	
     Particle one_particle;      // single particle object
     default_random_engine gen;  // rv sequence object
@@ -104,18 +108,14 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     normal_distribution <double> dist_y    (0, std_pos[1]);
     normal_distribution <double> dist_theta(0, std_pos[2]);
     
-    // Set process flag
+    // Figure out which bicycle model equations will be used for calculation
     if (abs(yaw_rate) > __DBL_EPSILON__) {
         yaw_rate_not_zero = true;
     } else {
         yaw_rate_not_zero = false;
-        if (PDEBUG) cout << "Yaw rate ZERO!" << endl;
     }
     
-    // 3 parts to predicition
-    //P-1 Sample
-    //P-2 Calculate weight
-    //P-3 Update state vector
+    // Predict all particle's location and heading
     for (int i=0; i<num_particles; i++) {
     
         old_x     = particles[i].x;
@@ -124,18 +124,18 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         
         if (yaw_rate_not_zero) {
         
+            // Equations from lecture
             v_div_yawrate = velocity/yaw_rate;
-            
             new_theta = old_theta + yaw_rate*delta_t;
             new_x = old_x + (v_div_yawrate * (sin(new_theta)-sin(old_theta)));
             new_y = old_y + (v_div_yawrate * (cos(old_theta)-cos(new_theta)));
             
         } else {
             
-            // <TODO> Need to figure out these equations
+            // Equations from lecture
             new_theta = old_theta;
-            new_x = old_x + (velocity*delta_t)*cos(new_theta);
-            new_y = old_y + (velocity*delta_t)*sin(new_theta);
+            new_x = old_x + (velocity*delta_t)*cos(old_theta);
+            new_y = old_y + (velocity*delta_t)*sin(old_theta);
             
         } // if
         
@@ -170,7 +170,40 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     //   and the following is a good resource for the actual equation to implement (look at equation
     //   3.33
     //   http://planning.cs.uiuc.edu/node99.html
+
+    double obs_x_on_map, obs_y_on_map;
+    
+    // #1 - transform vehicle landmark observations to map coordinates
+    for (int i=0; i<observations.size(); i++) {
+       obs_x_on_map = observations[i].x + 
+    
+    
+    }
+    
+    // #2 - For each observed landmark , predict which landmark it goes with (within sensor range) by nearest neighbor
+    
+    // #3 - Use the multi-variate Guass prob function to assign weight to each particle
+
+
+
+
+
+
+
+
+
 }
+
+
+// Called by updateWeights
+void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
+    // TODO: Find the predicted measurement that is closest to each observed measurement and assign the
+    //   observed measurement to this particular landmark.
+    // NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
+    //   implement this method and use it as a helper during the updateWeights phase.
+    
+}
+
 
 
 // Section #4
@@ -189,14 +222,6 @@ void ParticleFilter::resample() {
 //
 //---------------
 
-// Called by updateWeights
-void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
-	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
-	//   observed measurement to this particular landmark.
-	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
-	//   implement this method and use it as a helper during the updateWeights phase.
-
-}
 
 
 
