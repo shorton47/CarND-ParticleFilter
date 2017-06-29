@@ -183,32 +183,29 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
                                    std::vector<LandmarkObs> observations, Map map_landmarks) {
     
-    Particle p;
-    vector <LandmarkObs> map_observ_inrange;
+    LandmarkObs lm,lm_onmap;
+    Particle    p;
+    vector <LandmarkObs> observations_onmap;
+    vector <LandmarkObs> observations_onmap_inrange;
+    vector <LandmarkObs> map_landmarks_in_range;
     
     int index_into_landmark;
-    
+    double lmx, lmy, distance;
+   
+    double costheta,sintheta;
     double mu_x, mu_y, x_diff, y_diff, x_diff_sq, y_diff_sq;
     double sigma_x, sigma_y, sigmax_sq, sigmay_sq;
     double cterm, prob, total_prob;
     
-    
-    
+
     // Pre-compute fixed prob terms
     sigma_x = std_landmark[0];
     sigma_y = std_landmark[1];
     sigmax_sq = sigma_x*sigma_x;
     sigmay_sq = sigma_y*sigma_y;
     cterm = 1.0/(2.0*M_PI*sigma_x*sigma_y);
-
-
-    // For each particle
-    //for (auto const &p: particles) {
-        // Clear landmarks associated to observations
-        //for (auto & obs: observations) {
-        //    obs.id = 0;
-        //}
-
+    
+    
     // Step 1: Loop over all particles
     for (int i=0; i<particles.size(); i++) {
 
@@ -218,65 +215,46 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         p.theta  = particles[i].theta;
         p.weight = particles[i].weight;
         
-        
         // Step 1A: Convert vehicle obs to map coord (from particle perspective which is in Map coord)
-        vector <LandmarkObs> observations_onmap;
-        vector <LandmarkObs> observations_onmap_inrange;
-        //observations_onmap = LandmarkObs();  // <TODO> <Need to INIT THIS!!>
-        LandmarkObs lm,lm_onmap;
-       
-
-        if (PDEBUG) cout << "PF:UW # of map observations=" << observations.size() << endl;
+        observations_onmap.clear();
+        observations_onmap_inrange.clear();
         for (int j=0; j<observations.size(); j++) {
         
-            double costheta = cos(p.theta);
-            double sintheta = sin(p.theta);
+            costheta = cos(p.theta);
+            sintheta = sin(p.theta);
             
             lm.x = observations[j].x;
             lm.y = observations[j].y;
-            
-            // <TODO> !!! Might need push here
-            //observations_onmap[j].x = p.x + (lm.x*costheta - lm.y*sintheta);
-            //observations_onmap[j].y = p.y + (lm.x*sintheta + lm.y*costheta);
             
             lm_onmap.id = observations[j].id;
             lm_onmap.x  = p.x + (lm.x*costheta - lm.y*sintheta);
             lm_onmap.y  = p.y + (lm.x*sintheta + lm.y*costheta);
             observations_onmap.push_back(lm_onmap);
-            //cout << "T: P#" << i+1 << " OBS#" << j+1 << " 0=" << lm.x << " " << lm.y <<
-            //                                            " 1=" << lm_onmap.x << " " << lm_onmap.y << " a=" << p.theta << endl;
         }
         
-        
+        if (PDEBUG) {
+            cout << "PF:UW # of oservs, observs_inrange, map landmarks =" << observations.size() << " " << observations_onmap.size() << " " << map_landmarks.landmark_list.size() <<  endl;
+        }
+
         // Step 1B: Determine which map landmarks are in range of particle/vehicle sensor
-        std::vector<LandmarkObs> map_landmarks_in_range;
-        LandmarkObs cur_lm;
-        if (PDEBUG) cout << "PF:UW # of map landmarks=" << map_landmarks.landmark_list.size() << endl;;
         for (int j=0; j<map_landmarks.landmark_list.size(); j++) {
         
-            double lmx = (double) map_landmarks.landmark_list[j].x_f;
-            float lmy = map_landmarks.landmark_list[j].y_f;
-            double distance = dist(p.x, p.y, lmx, lmy);
+            lmx = (double)map_landmarks.landmark_list[j].x_f;
+            lmy = (double)map_landmarks.landmark_list[j].y_f;
+            distance = dist(p.x, p.y, lmx, lmy);
 
             if (distance <= sensor_range) {
-                cur_lm.id = map_landmarks.landmark_list[j].id_i;
-                cur_lm.x = map_landmarks.landmark_list[j].x_f;
-                cur_lm.y = map_landmarks.landmark_list[j].y_f;
-
-                map_landmarks_in_range.push_back(cur_lm);
+                lm.id = map_landmarks.landmark_list[j].id_i;
+                lm.x = map_landmarks.landmark_list[j].x_f;
+                lm.y = map_landmarks.landmark_list[j].y_f;
+                map_landmarks_in_range.push_back(lm);
             }
         
         }
         if (PDEBUG) cout << "PF:UW # of map landmarks in range=" << map_landmarks_in_range.size() << endl;
         
-        // Change to this later to clean up
-        //for (auto const &map_landmark: map_landmarks.landmark_list) {
-        //    double distance = dist(p.x, p.y, map_landmark.x_f, map.landmark.y_f);
-        //    if (distance > sensor_range) {
         
-        
-        // Step #2: Associate in range observations with map landmarks
-        // Attempt to associate a landmark to each observation
+        // Step #2: Associate in range map landmarks to vehicle observations
         dataAssociation(map_landmarks_in_range, observations_onmap);
  
         // Check that association worked
@@ -288,10 +266,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
                                                    << map_landmarks.landmark_list[index_into_landmark-1].y_f << endl;
             }
         }
-       
-       
+    
         
-        
+        // Step #3 - Calculate total probability and update weights
         total_prob = 1.0;
         for (int j=0; j<observations_onmap.size(); j++) {
             
@@ -303,7 +280,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
            
             x_diff = observations_onmap[j].x - mu_x;
             y_diff = observations_onmap[j].y - mu_y;
-            
             x_diff_sq = x_diff * x_diff;
             y_diff_sq = y_diff * y_diff;
 
@@ -314,25 +290,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
         // Update particle weight
         particles[i].weight = total_prob;
-        weights[i] = particles[i].weight;
+        weights[i] = total_prob;
 
-        
-       
-        // Call data association
-
-        
-        //obs_x_on_map = observations[i].x +
-    
-    //}
-    
-        // #1B - Add only landmarks within sensor range of
-    
-    
-    
-    // #2 - For each observed landmark , predict which landmark it goes with (within sensor range) by nearest neighbor
-    
-  
     } // for particles
+    
 } // updateWeights
 
 
@@ -377,11 +338,11 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
                 min_distance_lm_id = predicted[j].id; // This is Map ID that has min distance
                 min_distance = distance;
             }
-       
-        observations[i].id = min_distance_lm_id;  // Update observation with closest predicition ID
-        
+            observations[i].id = min_distance_lm_id;  // Update observation with closest predicition ID
         } // for map landmarks in range
+    
     } // for observations
+
 } // dataAssociation
 
 
@@ -464,3 +425,19 @@ string ParticleFilter::getSenseY(Particle best)
     s = s.substr(0, s.length()-1);  // get rid of the trailing space
     return s;
 }
+
+//
+// Programming notes:
+//
+// For C++ V11 and higher, could use nice object iterator, such as:
+
+// For particles
+//for (auto const &p: particles) {
+// Clear landmarks associated to observations
+//for (auto & obs: observations) {
+//    obs.id = 0;
+//}
+//
+//for (auto const &map_landmark: map_landmarks.landmark_list) {
+//    double distance = dist(p.x, p.y, map_landmark.x_f, map.landmark.y_f);
+//    if (distance > sensor_range) {
