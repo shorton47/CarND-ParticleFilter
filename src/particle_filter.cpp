@@ -20,7 +20,7 @@
 using namespace std;
 
 // Class global for debug
-bool PDEBUG = true;
+bool PDEBUG = false;
 
 //---------------
 // For each iteration of the master Particle Filter engine (from main.cpp), there are up to 4 main methods called:
@@ -63,15 +63,15 @@ void ParticleFilter::init(double gps_x, double gps_y, double init_heading, doubl
     
     
     // Set # of particles
-    num_particles = 5;
-    if (PDEBUG) cout << "Number of particles being generated=" << num_particles << endl;
+    num_particles = 999;
+    if (PDEBUG) cout << "PF-Init:Number of particles being generated=" << num_particles << endl;
     
     // Normal (Gaussian) distributions with means position and yaw w/ st deviations's of std[].
     normal_distribution <double> dist_x    (gps_x,        gps_std[0]);
     normal_distribution <double> dist_y    (gps_y,        gps_std[1]);
     normal_distribution <double> dist_theta(init_heading, gps_std[2]);
     
-    // Generate particles w/ position with additive gaussian noise. "gen" is the random engine initialized earlier
+    // Generate particles + additive gaussian noise. "gen" is the random # engine initialized earlier
     for (int i = 0; i < num_particles; ++i) {
         
         a_particle.id     = i+1;
@@ -80,12 +80,12 @@ void ParticleFilter::init(double gps_x, double gps_y, double init_heading, doubl
         a_particle.theta  = dist_theta(gen);
         a_particle.weight = 1.0F;
         
-        particles.push_back(a_particle);  // Add this particle to array of particles.
+        particles.push_back(a_particle);  // Add to array of particles.
         weights.push_back(1.0F);          // List of NORMALIZED particle weights <TODO> Figure this out
         
-        // Debug
-        if (PDEBUG) cout << "Particle: " << a_particle.id << " " << a_particle.x     << " "
-                                         << a_particle.y  << " " << a_particle.theta << " " <<  endl;
+        //
+        if (PDEBUG) cout << "PF-Init:Particle #" << i+1 << " " << a_particle.id << " " << a_particle.x << " "
+                                                               << a_particle.y  << " " << a_particle.theta << " " <<  endl;
     }
     
     is_initialized = true;
@@ -154,8 +154,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         particles[i].y      = new_y +  dist_y(gen);
         particles[i].theta  = new_theta + dist_theta(gen);
         
-        if (PDEBUG) cout << "P Update #" << particles[i].id << " " << particles[i].x << " "
-                                        <<  particles[i].y  << " " << particles[i].theta << endl;
+        if (PDEBUG) cout << "PF:Pred #" << i+1 << " " << particles[i].id << " " << particles[i].x << " "
+                                                      << particles[i].y  << " " << particles[i].theta << endl;
     } // for num_particles
     
 } // predicition method
@@ -183,7 +183,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // Create:
     // LandmarkObs observations_onmap           (Map Space)
 
-    double obsx_map, obsy_map;
+    //double obsx_map, obsy_map;
     
     vector <LandmarkObs> map_observ_inrange;
     
@@ -195,7 +195,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         //}
 
     // For each particle
-    cout << "updateWeights: # of particles=" << particles.size() << endl;
+    //cout << "updateWeights: # of particles=" << particles.size() << endl;
     for (int i=0; i<particles.size(); i++) {
     
         /*
@@ -223,7 +223,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         LandmarkObs lm,lm_onmap;
        
 
-        cout << "updateWeights: # of observations=" << observations.size() << endl;;
+        if (PDEBUG) cout << "PF:UW # of map observations=" << observations.size() << endl;
         for (int j=0; j<observations.size(); j++) {
         
             double costheta = cos(p.theta);
@@ -240,16 +240,15 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             lm_onmap.x  = p.x + (lm.x*costheta - lm.y*sintheta);
             lm_onmap.y  = p.y + (lm.x*sintheta + lm.y*costheta);
             observations_onmap.push_back(lm_onmap);
-            cout << "T: P#" << i+1 << " OBS#" << j+1 << " 0=" << lm.x << " " << lm.y <<
-                                                        " 1=" << lm_onmap.x << " " << lm_onmap.y << " a=" << p.theta << endl;;
+            //cout << "T: P#" << i+1 << " OBS#" << j+1 << " 0=" << lm.x << " " << lm.y <<
+            //                                            " 1=" << lm_onmap.x << " " << lm_onmap.y << " a=" << p.theta << endl;
         }
         
         
         // Step 1B: Determine which map landmarks are in range of particle/vehicle sensor
         std::vector<LandmarkObs> map_landmarks_in_range;
         LandmarkObs cur_lm;
-        cout << "# of map landmarks=" << map_landmarks.landmark_list.size() << endl;;
-
+        if (PDEBUG) cout << "PF:UW # of map landmarks=" << map_landmarks.landmark_list.size() << endl;;
         for (int j=0; j<map_landmarks.landmark_list.size(); j++) {
         
             double lmx = (double) map_landmarks.landmark_list[j].x_f;
@@ -265,7 +264,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             }
         
         }
-         cout << "# of map landmarks in range=" << map_landmarks_in_range.size() << endl;
+        if (PDEBUG) cout << "PF:UW # of map landmarks in range=" << map_landmarks_in_range.size() << endl;
         
         // Change to this later to clean up
         //for (auto const &map_landmark: map_landmarks.landmark_list) {
@@ -295,27 +294,27 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         dataAssociation(map_landmarks_in_range, observations_onmap);
  
         // Check that we have right stuff
-        cout << "For obser #1=" << observations_onmap[0].x << " " << observations_onmap[0].y << " " << observations_onmap[0].id << endl;
+        if (PDEBUG) cout << "For obser #1=" << observations_onmap[0].x << " " << observations_onmap[0].y << " " << observations_onmap[0].id << endl;
         int index_into_landmark = observations_onmap[0].id;
-        cout << "Map Index for Obser=" <<  index_into_landmark-1 << endl;
-        cout << "Assoc Map=" << map_landmarks.landmark_list[index_into_landmark-1].x_f << " "
+        if (PDEBUG) cout << "Map Index for Obser=" <<  index_into_landmark-1 << endl;
+        if (PDEBUG) cout << "Assoc Map=" << map_landmarks.landmark_list[index_into_landmark-1].x_f << " "
         << map_landmarks.landmark_list[index_into_landmark-1].y_f << endl;
         
         // Need to print out whole array
-         cout << "Map X= ";
-        for(int i=0 ; i<map_landmarks.landmark_list.size(); i++)
-        {
-            cout << i << " " << map_landmarks.landmark_list[i].x_f << " ";
-        }
-        cout << endl;
+        // cout << "Map X= ";
+        //for(int i=0 ; i<map_landmarks.landmark_list.size(); i++)
+        //{
+        //    cout << i << " " << map_landmarks.landmark_list[i].x_f << " ";
+        //}
+        //cout << endl;
       
 
-        cout << "Map Y= ";
-        for(int i=0 ; i<map_landmarks.landmark_list.size(); i++)
-        {
-            cout << i << " " << map_landmarks.landmark_list[i].y_f << " ";
-        }
-        cout << endl;
+        //cout << "Map Y= ";
+        //for(int i=0 ; i<map_landmarks.landmark_list.size(); i++)
+        //{
+        //    cout << i << " " << map_landmarks.landmark_list[i].y_f << " ";
+        //}
+        //cout << endl;
         
         
         // Step #3 - Use the multi-variate Guass prob function to assign weight to each particle
@@ -334,7 +333,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         double sigmay_sq = sigma_y*sigma_y;
         
         double cterm = 1.0/(2.0*M_PI*sigma_x*sigma_y);
-        cout << "cterm=" << cterm << endl;
+        //cout << "cterm=" << cterm << endl;
 
         
         double total_prob = 1.0;
@@ -342,26 +341,28 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             
             // Find map landmark associated with current observation
             int index_into_landmark = observations_onmap[j].id;
-            cout << "At observ #=" << j+1 << " the id index into map=" << index_into_landmark << endl;
+            //cout << "At observ #=" << j+1 << " the id index into map=" << index_into_landmark << endl;
             
             double mu_x = map_landmarks.landmark_list[index_into_landmark-1].x_f;
             double mu_y = map_landmarks.landmark_list[index_into_landmark-1].y_f;
-            cout << "mu_x & y=" << mu_x  << " " << mu_y  << endl;
+            //cout << "mu_x & y=" << mu_x  << " " << mu_y  << endl;
             
             double x_diff = observations_onmap[j].x - mu_x;
             double y_diff = observations_onmap[j].y - mu_y;
-            cout << "x & y diff=" << x_diff  << " " << y_diff << endl;
+            //cout << "x & y diff=" << x_diff  << " " << y_diff << endl;
             
             double x_diff_sq = x_diff * x_diff;
             double y_diff_sq = y_diff * y_diff;
 
             double prob = cterm * exp(-((x_diff_sq/(2.0*sigmax_sq)) + (y_diff_sq/(2.0*sigmay_sq))));
-            cout << "prob=" << prob << endl;
+            //cout << "prob=" << prob << endl;
             
             total_prob = total_prob * prob;
-            cout << "total_prob=" << total_prob << endl;
+            //cout << "total_prob=" << total_prob << endl;
             
         }
+        if (PDEBUG) cout << "PF:UW: Total_prob=" << total_prob << endl;
+
         
         // Update particle weight
         particles[i].weight = total_prob;
@@ -508,25 +509,24 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
             map_lm.x = predicted[j].x;
             map_lm.y = predicted[j].y;
             double distance = dist(o_lm.x, o_lm.y, map_lm.x, map_lm.y);
-            cout << "OBS#=" << i+1 << " MAP#=" << j+1 << " dist=" << distance << endl;
+            //cout << "OBS#=" << i+1 << " MAP#=" << j+1 << " dist=" << distance << endl;
             if (distance < min_distance) {
                 min_distance_lm_id = predicted[j].id; // This is Map ID that has min distance
                 min_distance = distance;
                 min_map_lm.x = map_lm.x;
                 min_map_lm.y = map_lm.y;
-                cout << "New min dist=" << min_distance << " " << min_distance_lm_id << endl;
-                //cout << "Map coords=" << predicted[min_distance_lm_id].x << " " << predicted[min_distance_lm_id].y << endl;
-                cout << "Map coords=" << min_map_lm.x << " " << min_map_lm.y << endl;
-                
-
+                //cout << "New min dist=" << min_distance << " " << min_distance_lm_id << endl;
+                ////cout << "Map coords=" << predicted[min_distance_lm_id].x << " " << predicted[min_distance_lm_id].y << endl;
+                //cout << "Map coords=" << min_map_lm.x << " " << min_map_lm.y << endl;
             }
             
         //predicted[i].id = min_distance_lm_id; // Update predicition ID with the closest observation id
         observations[i].id = min_distance_lm_id;
         }
-        cout << "OBS#=" << i+1 << " gets map lm id#=" << min_distance_lm_id << endl;
-        cout << "OBS coords=" << o_lm.x << " " << o_lm.y << endl;
-        cout << "Nearest Map coords=" <<  min_map_lm.x  << " " <<  min_map_lm.y  << endl;
+        
+        //cout << "OBS#=" << i+1 << " gets map lm id#=" << min_distance_lm_id << endl;
+        //cout << "OBS coords=" << o_lm.x << " " << o_lm.y << endl;
+        //cout << "Nearest Map coords=" <<  min_map_lm.x  << " " <<  min_map_lm.y  << endl;
             
             
         
@@ -548,9 +548,9 @@ void ParticleFilter::resample() {
     vector<Particle> resample_particles;
     for(int i = 0; i < num_particles; i++){
         resample_particles.push_back(particles[distribution(gen)]);
-        cout << resample_particles[i].weight << " ";
+        //cout << resample_particles[i].weight << " ";
     }
-    cout << endl;
+    //cout << endl;
     
     particles = resample_particles;
 }
