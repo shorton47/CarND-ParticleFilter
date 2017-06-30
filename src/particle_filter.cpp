@@ -32,9 +32,10 @@
 
 using namespace std;
 
-// Class global for debug
+//---
+// Set class level DEBUG here
 bool PDEBUG = false;
-
+//---
 
 //-----
 // Step #1 - init
@@ -59,7 +60,7 @@ void ParticleFilter::init(double gps_x, double gps_y, double init_heading, doubl
     
     
     // Set # of particles (NOTE: CLASS VARIABLE)
-    num_particles = 50;
+    num_particles = 99;
     if (PDEBUG) cout << "PF-Init:Number of particles being generated=" << num_particles << endl;
     
     // Normal (Gaussian) distributions with means position and yaw w/ st deviations's of std[].

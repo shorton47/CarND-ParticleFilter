@@ -138,8 +138,8 @@ int main() {
 			}
 			weight_sum += particles[i].weight;
 		  }
-		  cout << "highest w " << highest_weight << endl;
-		  cout << "average w " << weight_sum/num_particles << endl;
+		  if (PDEBUG) cout << "Highest w =" << highest_weight << endl;
+		  if (PDEBUG) cout << "Average w =" << weight_sum/num_particles << endl;
 
           json msgJson;
           msgJson["best_particle_x"] = best_particle.x;
@@ -181,7 +181,7 @@ int main() {
   });
 
   h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
-    std::cout << "Filter main: Particle filter engine connected & ready to start..." << std::endl;
+    std::cout << "Filter main: Particle filter engine connected & READY to start!" << std::endl;
   });
 
   h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
