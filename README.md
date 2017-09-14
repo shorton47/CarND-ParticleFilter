@@ -1,9 +1,38 @@
-# Overview
-This repository contains all the code needed to complete the final project for the Localization course in Udacity's Self-Driving Car Nanodegree.
+# CarND Particle Filter (Kidnapped Vehicle) Project (Term 2 - Project #3)
+Self-Driving Car Engineer Nanodegree Program
 
-#### Submission
-All you will submit is your completed version of `particle_filter.cpp`, which is located in the `src` directory. You should probably do a `git pull` before submitting to verify that your project passes the most up-to-date version of the grading code (there are some parameters in `src/main.cpp` which govern the requirements on accuracy and run time.)
+---
+### Overview & Goals
 
+
+The particle filter (kidnapped vehicle) project is a 2D particle filter that takes a map, localization data (simulated GPS), observation, and control data and produces the optimal location and motion state vector for the vehicle using a particle filter algorithm. According to Sebastian Thrun, this is how the Google Car generally operates.
+
+[//]: # (Image References)
+
+[image1]: ./images/ParticleFilterGoing.png "Result"
+[image2]: ./images/ParticleFilterPass.png "Result"
+[image3]: ./images/PathPlanningStateTransitionMatrix4.jpg "Result"
+[image4]: ./images/hqdefault.jpg "Result"
+
+
+After the Particle Filter module was working, I obtained the following results with v1.45 of the Udacity Simulator:
+
+
+
+| Figure 1 - Particle Filter Operating | Figure 2 - Paticle Filter Finished Route  | 
+| :---:                                | :---:                                     |
+| ![alt text][image1]                  | ![alt text][image2]                       |
+
+
+
+Below is a video of a run of my particle filter framework in the Udacity Simulator. The blue ring around the vehicle is my particle filters optimal estimate of the vehicle location given all of the sources of input. The vehicle is ground truth:
+
+#### Particle Filter Video in Udacity Simulator!
+[![Particle Filter](./images/hqdefault.jpg)](https://youtu.be/ecoRRQfaRYY)
+#### Click image to run YouTube video
+
+
+---
 ## Project Introduction
 Your robot has been kidnapped and transported to a new location! Luckily it has a map of this location, a (noisy) GPS estimate of its initial location, and lots of (noisy) sensor and control data.
 
